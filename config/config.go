@@ -12,3 +12,7 @@ const (
 	ServerIp   = "127.0.0.1"
 	ServerPort = "8080"
 )
+
+const (
+	JWTSecret = "my_secret"
+)
