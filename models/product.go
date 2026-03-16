@@ -11,5 +11,5 @@ type Product struct {
 	Stock      int     `gorm:"default:0" json:"stock"`
 	ImageUrl   string  `json:"image_url"`
 	SoldCount  int     `gorm:"default:0" json:"sold_count"`
-	Status     string  `gorm:"default:'on';check:status in 'on','off'" json:"status"`
+	Status     string  `gorm:"default:'on';check:status in ('on','off')" json:"status"`
 }
