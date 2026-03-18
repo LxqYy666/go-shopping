@@ -23,7 +23,7 @@ func InitDB() {
 	if err != nil {
 		panic("数据库初始化失败")
 	}
-	db.Create(&models.User{Username: "admin", Email: "example@xx.com", Password: "admin", Role: "admin", Status: "active"})
+	// db.Create(&models.User{Username: "admin", Email: "example@xx.com", Password: "admin", Role: "admin", Status: "active"})
 
 	DB = db
 }

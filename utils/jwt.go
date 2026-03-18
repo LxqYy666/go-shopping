@@ -2,18 +2,22 @@ package utils
 
 import (
 	"fmt"
+	"go-shopping/config"
 
 	"github.com/golang-jwt/jwt/v5"
 )
 
-func GenerateJWT(key any, method jwt.SigningMethod, claim jwt.Claims) (string, error) {
-	token := jwt.NewWithClaims(method, claim)
-	return token.SignedString(key)
+func GenerateJWT(method jwt.SigningMethod, expiration int, userID int) (string, error) {
+	token := jwt.NewWithClaims(method, jwt.MapClaims{
+		"exp": expiration,
+		"sub": userID,
+	})
+	return token.SignedString([]byte(config.JWTSecret))
 }
 
-func ParseJWT(key any, jwtStr string) (jwt.Claims, error) {
+func ParseJWT(jwtStr string) (jwt.Claims, error) {
 	token, err := jwt.Parse(jwtStr, func(t *jwt.Token) (any, error) {
-		return key, nil
+		return []byte(config.JWTSecret), nil
 	})
 	if err != nil {
 		return nil, err

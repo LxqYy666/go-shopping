@@ -1,6 +1,15 @@
 package net
 
-type LoginReq struct {
-	Username string `json:"username"`
-	Password string `json:"password"`
+type Response struct {
+	Code    int    `json:"code"`
+	Data    any    `json:"data"`
+	Message string `json:"message"`
+}
+
+type LoginResData struct {
+	Token string `json:"token"`
+}
+
+func NewRes(code int, data any, message string) Response {
+	return Response{Code: code, Data: data, Message: message}
 }
