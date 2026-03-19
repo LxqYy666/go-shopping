@@ -5,3 +5,9 @@ type LoginReq struct {
 	Password string `json:"password"`
 	Remember bool   `json:"remember"`
 }
+
+type RegisterReq struct {
+	Username string `json:"username"`
+	Email    string `json:"email"`
+	Password string `json:"password"`
+}

@@ -18,6 +18,7 @@ func LoginHandler(c *gin.Context) {
 	if err := c.BindJSON(&loginBody); err != nil {
 		fmt.Println("绑定失败")
 		c.JSON(http.StatusServiceUnavailable, net.NewRes(http.StatusServiceUnavailable, nil, "请求不可用"))
+		return
 	}
 
 	if user, err := dao.HasAUser(loginBody); err != nil {
@@ -38,4 +39,19 @@ func LoginHandler(c *gin.Context) {
 			c.JSON(http.StatusOK, net.NewRes(http.StatusOK, net.LoginResData{Token: token}, "登陆成功"))
 		}
 	}
+}
+
+func RegisterHandler(c *gin.Context) {
+	var registerBody net.RegisterReq
+	if err := c.BindJSON(&registerBody); err != nil {
+		c.JSON(http.StatusServiceUnavailable, net.NewRes(http.StatusServiceUnavailable, nil, "请求不可用"))
+		return
+	}
+
+	if err := dao.CreateAUser(registerBody); err != nil {
+		c.JSON(http.StatusUnauthorized, net.NewRes(http.StatusBadRequest, nil, err.Error()))
+		return
+	}
+
+	c.JSON(http.StatusOK, net.NewRes(http.StatusOK, nil, "注册成功"))
 }
