@@ -11,3 +11,7 @@ type RegisterReq struct {
 	Email    string `json:"email"`
 	Password string `json:"password"`
 }
+
+type AddCategoryReq struct {
+	Name string `json:"name"`
+}

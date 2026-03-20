@@ -10,6 +10,12 @@ type LoginResData struct {
 	Token string `json:"token"`
 }
 
+type CategoryInfoReqData struct {
+	ID           uint   `json:"id"`
+	Name         string `json:"name"`
+	ProductCount int    `json:"productCount"`
+}
+
 func NewRes(code int, data any, message string) Response {
 	return Response{Code: code, Data: data, Message: message}
 }
