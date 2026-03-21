@@ -27,4 +27,10 @@ func CategoryAddHandler(c *gin.Context) {
 
 func CategoryListHandler(c *gin.Context) {
 
+	if categoryList, err := dao.GetCategoryInfo(); err != nil {
+		c.JSON(http.StatusServiceUnavailable, net.NewRes(http.StatusServiceUnavailable, nil, "请求不可用"))
+	} else {
+		c.JSON(http.StatusOK, net.NewRes(http.StatusOK, categoryList, "获取种类信息成功"))
+	}
+
 }
