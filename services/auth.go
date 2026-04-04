@@ -36,7 +36,7 @@ func LoginHandler(c *gin.Context) {
 		if err != nil {
 			c.JSON(http.StatusServiceUnavailable, net.NewRes(http.StatusServiceUnavailable, nil, "请求不可用"))
 		} else {
-			c.JSON(http.StatusOK, net.NewRes(http.StatusOK, net.LoginResData{Token: token}, "登陆成功"))
+			c.JSON(http.StatusOK, net.NewRes(http.StatusOK, net.LoginResData{Token: token, Role: user.Role}, "登陆成功"))
 		}
 	}
 }

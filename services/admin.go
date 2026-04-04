@@ -34,3 +34,11 @@ func CategoryListHandler(c *gin.Context) {
 	}
 
 }
+
+func ProductListHandler(c *gin.Context) {
+	if productList, err := dao.GetProductList(); err != nil {
+		c.JSON(http.StatusServiceUnavailable, net.NewRes(http.StatusServiceUnavailable, nil, "请求不可用"))
+	} else {
+		c.JSON(http.StatusOK, net.NewRes(http.StatusOK, productList, "获取商品信息成功"))
+	}
+}

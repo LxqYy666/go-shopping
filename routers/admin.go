@@ -9,4 +9,7 @@ func InitAdminRouter() {
 	categoryRouter.GET("/list", services.CategoryListHandler)
 	categoryRouter.POST("/add", services.CategoryAddHandler)
 
+	productRouter := r.Group("/product")
+	productRouter.GET("list", services.ProductListHandler)
+
 }

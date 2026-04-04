@@ -37,3 +37,13 @@ func GetCategoryInfo() ([]net.CategoryInfoReqData, error) {
 	return categoryInfoReqDataList, nil
 
 }
+
+func GetProductList() ([]net.ProductInfoReqData, error) {
+	var productList []net.ProductInfoReqData
+
+	err := utils.DB.Raw("select id,name,'desc',category_id,price,stock,image_url,sold_count,status from products").Scan(&productList).Error
+	if err != nil {
+		return nil, err
+	}
+	return productList, nil
+}

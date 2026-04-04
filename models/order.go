@@ -18,9 +18,10 @@ type Order struct {
 
 type OrderItem struct {
 	gorm.Model
-	OrderID   uint `json:"order_id"`
-	ProductID uint `json:"product_id"`
-	Quantity  int  `gorm:"not null" json:"quantity"`
+	OrderID    uint    `json:"order_id"`
+	ProductID  uint    `json:"product_id"`
+	Quantity   int     `gorm:"not null" json:"quantity"`
+	TotalPrice float32 `gorm:"not null" json:"total_price"`
 
 	// 关联
 	Order   *Order   `json:"-" gorm:"foreignKey:OrderID"`
