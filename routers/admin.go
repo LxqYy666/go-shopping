@@ -12,4 +12,6 @@ func InitAdminRouter() {
 	productRouter := r.Group("/product")
 	productRouter.GET("list", services.ProductListHandler)
 
+	userRouter := r.Group("/user")
+	userRouter.GET("/list", services.UserListHandler)
 }

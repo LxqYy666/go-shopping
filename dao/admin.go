@@ -47,3 +47,18 @@ func GetProductList() ([]net.ProductInfoReqData, error) {
 	}
 	return productList, nil
 }
+
+func GetUserList() ([]net.UserInfoReqData, error) {
+	var userList []net.UserInfoReqData
+	err := utils.DB.Raw("select id,username,avatar,role,status,created_at from users").Scan(&userList).Error
+	if err != nil {
+		return nil, err
+	}
+	for i := range userList {
+		err := utils.DB.Raw("select count(*) from orders where user_id = ?", userList[i].ID).Scan(&userList[i].OrdersCount).Error
+		if err != nil {
+			return nil, err
+		}
+	}
+	return userList, nil
+}

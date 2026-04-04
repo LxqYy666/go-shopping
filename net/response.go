@@ -29,6 +29,16 @@ type ProductInfoReqData struct {
 	Status     string  `json:"status"`
 }
 
+type UserInfoReqData struct {
+	ID          uint   `json:"id"`
+	Username    string `json:"username"`
+	Avatar      string `json:"avatar"`
+	Role        string `json:"role"`
+	Status      string `json:"status"`
+	OrdersCount int    `json:"orders_count"`
+	CreatedAt   string `json:"created_at"`
+}
+
 func NewRes(code int, data any, message string) Response {
 	return Response{Code: code, Data: data, Message: message}
 }
