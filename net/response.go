@@ -39,6 +39,35 @@ type UserInfoReqData struct {
 	CreatedAt   string `json:"created_at"`
 }
 
+type CartItemData struct {
+	ID        uint            `json:"id"`
+	ProductID uint            `json:"product_id"`
+	Quantity  int             `json:"quantity"`
+	Product   ProductInfoReqData `json:"product"`
+}
+
+type OrderItemData struct {
+	ID         uint    `json:"id"`
+	ProductID  uint    `json:"product_id"`
+	Quantity   int     `json:"quantity"`
+	TotalPrice float32 `json:"total_price"`
+	Product    *ProductInfoReqData `json:"product,omitempty"`
+}
+
+type OrderData struct {
+	ID            uint            `json:"id"`
+	UserID        uint            `json:"user_id"`
+	TotalAmount   float32         `json:"total_amount"`
+	Status        string          `json:"status"`
+	ReceiverAddr  string          `json:"receiver_addr"`
+	ReceiverName  string          `json:"receiver_name"`
+	ReceiverPhone string          `json:"receiver_phone"`
+	Remark        string          `json:"remark"`
+	CreatedAt     string          `json:"created_at"`
+	User          *UserInfoReqData `json:"user,omitempty"`
+	Items         []OrderItemData `json:"items,omitempty"`
+}
+
 func NewRes(code int, data any, message string) Response {
 	return Response{Code: code, Data: data, Message: message}
 }

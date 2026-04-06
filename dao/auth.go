@@ -41,3 +41,24 @@ func CreateAUser(registerInfo net.RegisterReq) error {
 	err = utils.DB.Create(&newUser).Error
 	return err
 }
+
+func GetUserByID(userID uint) (*net.UserInfoReqData, error) {
+	var user models.User
+	err := utils.DB.First(&user, userID).Error
+	if err != nil {
+		return nil, err
+	}
+
+	var ordersCount int64
+	utils.DB.Model(&models.Order{}).Where("user_id = ?", userID).Count(&ordersCount)
+
+	return &net.UserInfoReqData{
+		ID:          user.ID,
+		Username:    user.Username,
+		Avatar:      user.Avatar,
+		Role:        user.Role,
+		Status:      user.Status,
+		OrdersCount: int(ordersCount),
+		CreatedAt:   user.CreatedAt.Format("2006-01-02 15:04:05"),
+	}, nil
+}
