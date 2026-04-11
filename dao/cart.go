@@ -1,15 +1,26 @@
 package dao
 
 import (
+	"go-shopping/config"
 	"fmt"
 	"go-shopping/models"
 	"go-shopping/net"
 	"go-shopping/utils"
+	"log"
+	"time"
 )
 
 func GetCartItems(userID uint) ([]net.CartItemData, error) {
+	cacheKey := cartCacheKey(userID)
+	cached, found, err := utils.GetCache[[]net.CartItemData](cacheKey)
+	if err != nil {
+		log.Printf("get cart cache failed, user_id=%d err=%v", userID, err)
+	} else if found {
+		return cached, nil
+	}
+
 	var cartItems []models.Cart
-	err := utils.DB.Where("user_id = ?", userID).Preload("Product").Find(&cartItems).Error
+	err = utils.DB.Where("user_id = ?", userID).Preload("Product").Find(&cartItems).Error
 	if err != nil {
 		return nil, err
 	}
@@ -34,6 +45,10 @@ func GetCartItems(userID uint) ([]net.CartItemData, error) {
 				Status:     item.Product.Status,
 			}
 		}
+	}
+
+	if err := utils.SetCache(cacheKey, result, time.Duration(config.CacheTTLSeconds)*time.Second); err != nil {
+		log.Printf("set cart cache failed, user_id=%d err=%v", userID, err)
 	}
 
 	return result, nil
@@ -61,7 +76,13 @@ func AddToCart(userID uint, req net.AddToCartReq) error {
 		if product.Stock < newQuantity {
 			return fmt.Errorf("库存不足")
 		}
-		return utils.DB.Model(&existingCart).Update("quantity", newQuantity).Error
+		if err := utils.DB.Model(&existingCart).Update("quantity", newQuantity).Error; err != nil {
+			return err
+		}
+		if err := invalidateCartCache(userID); err != nil {
+			log.Printf("invalidate cart cache failed, user_id=%d err=%v", userID, err)
+		}
+		return nil
 	}
 
 	// 新增购物车项
@@ -70,7 +91,13 @@ func AddToCart(userID uint, req net.AddToCartReq) error {
 		ProductID: req.ProductID,
 		Quantity:  req.Quantity,
 	}
-	return utils.DB.Create(&cart).Error
+	if err := utils.DB.Create(&cart).Error; err != nil {
+		return err
+	}
+	if err := invalidateCartCache(userID); err != nil {
+		log.Printf("invalidate cart cache failed, user_id=%d err=%v", userID, err)
+	}
+	return nil
 }
 
 func UpdateCartItem(userID uint, cartID uint, req net.UpdateCartReq) error {
@@ -85,9 +112,21 @@ func UpdateCartItem(userID uint, cartID uint, req net.UpdateCartReq) error {
 		return fmt.Errorf("库存不足")
 	}
 
-	return utils.DB.Model(&cart).Update("quantity", req.Quantity).Error
+	if err := utils.DB.Model(&cart).Update("quantity", req.Quantity).Error; err != nil {
+		return err
+	}
+	if err := invalidateCartCache(userID); err != nil {
+		log.Printf("invalidate cart cache failed, user_id=%d err=%v", userID, err)
+	}
+	return nil
 }
 
 func DeleteCartItem(userID uint, cartID uint) error {
-	return utils.DB.Where("id = ? AND user_id = ?", cartID, userID).Delete(&models.Cart{}).Error
+	if err := utils.DB.Where("id = ? AND user_id = ?", cartID, userID).Delete(&models.Cart{}).Error; err != nil {
+		return err
+	}
+	if err := invalidateCartCache(userID); err != nil {
+		log.Printf("invalidate cart cache failed, user_id=%d err=%v", userID, err)
+	}
+	return nil
 }

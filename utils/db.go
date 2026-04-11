@@ -23,6 +23,10 @@ func InitDB() {
 	if err != nil {
 		panic("数据库初始化失败")
 	}
+
+	_ = db.Exec("ALTER TABLE orders DROP CONSTRAINT IF EXISTS chk_orders_status").Error
+	_ = db.Exec("ALTER TABLE orders DROP CONSTRAINT IF EXISTS orders_status_check").Error
+	_ = db.Exec("ALTER TABLE orders ADD CONSTRAINT chk_orders_status CHECK (status IN ('pending','paid','shipped','completed','cancelled'))").Error
 	// db.Create(&models.User{Username: "admin", Email: "example@xx.com", Password: "admin", Role: "admin", Status: "active"})
 
 	DB = db

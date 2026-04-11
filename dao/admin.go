@@ -2,12 +2,33 @@ package dao
 
 import (
 	"fmt"
+	"go-shopping/config"
 	"go-shopping/models"
 	"go-shopping/net"
 	"go-shopping/utils"
+	"log"
+	"time"
 
 	"gorm.io/gorm"
 )
+
+func cartCacheKey(userID uint) string {
+	return fmt.Sprintf("cache:cart:user:%d", userID)
+}
+
+func userOrdersCacheKey(userID uint) string {
+	return fmt.Sprintf("cache:orders:user:%d", userID)
+}
+
+const adminOrdersCacheKey = "cache:orders:admin:all"
+
+func invalidateCartCache(userID uint) error {
+	return utils.DeleteCache(cartCacheKey(userID))
+}
+
+func invalidateOrderCaches(userID uint) error {
+	return utils.DeleteCache(userOrdersCacheKey(userID), adminOrdersCacheKey)
+}
 
 func AddCategory(addCategoryReq net.AddCategoryReq) error {
 
@@ -111,8 +132,15 @@ func DeleteProduct(id uint) error {
 }
 
 func GetOrderList() ([]net.OrderData, error) {
+	cached, found, err := utils.GetCache[[]net.OrderData](adminOrdersCacheKey)
+	if err != nil {
+		log.Printf("get admin order cache failed: %v", err)
+	} else if found {
+		return cached, nil
+	}
+
 	var orders []models.Order
-	err := utils.DB.Preload("User").Preload("Items.Product").Order("created_at DESC").Find(&orders).Error
+	err = utils.DB.Preload("User").Preload("Items.Product").Order("created_at DESC").Find(&orders).Error
 	if err != nil {
 		return nil, err
 	}
@@ -165,12 +193,24 @@ func GetOrderList() ([]net.OrderData, error) {
 		}
 	}
 
+	if err := utils.SetCache(adminOrdersCacheKey, orderList, time.Duration(config.CacheTTLSeconds)*time.Second); err != nil {
+		log.Printf("set admin order cache failed: %v", err)
+	}
+
 	return orderList, nil
 }
 
 func GetUserOrders(userID uint) ([]net.OrderData, error) {
+	cacheKey := userOrdersCacheKey(userID)
+	cached, found, err := utils.GetCache[[]net.OrderData](cacheKey)
+	if err != nil {
+		log.Printf("get user order cache failed, user_id=%d err=%v", userID, err)
+	} else if found {
+		return cached, nil
+	}
+
 	var orders []models.Order
-	err := utils.DB.Where("user_id = ?", userID).Preload("Items.Product").Order("created_at DESC").Find(&orders).Error
+	err = utils.DB.Where("user_id = ?", userID).Preload("Items.Product").Order("created_at DESC").Find(&orders).Error
 	if err != nil {
 		return nil, err
 	}
@@ -211,6 +251,10 @@ func GetUserOrders(userID uint) ([]net.OrderData, error) {
 				}
 			}
 		}
+	}
+
+	if err := utils.SetCache(cacheKey, orderList, time.Duration(config.CacheTTLSeconds)*time.Second); err != nil {
+		log.Printf("set user order cache failed, user_id=%d err=%v", userID, err)
 	}
 
 	return orderList, nil
@@ -293,13 +337,48 @@ func CreateOrder(userID uint, req net.CreateOrderReq) error {
 		return err
 	}
 
-	return tx.Commit().Error
+	if err := tx.Commit().Error; err != nil {
+		return err
+	}
+
+	if err := invalidateCartCache(userID); err != nil {
+		log.Printf("invalidate cart cache failed, user_id=%d err=%v", userID, err)
+	}
+	if err := invalidateOrderCaches(userID); err != nil {
+		log.Printf("invalidate order cache failed, user_id=%d err=%v", userID, err)
+	}
+
+	deadline := time.Now().Add(time.Duration(config.OrderAutoCancelMinutes) * time.Minute)
+	if utils.RedisClient != nil {
+		if err := utils.EnqueueOrderTimeout(order.ID, deadline); err != nil {
+			log.Printf("enqueue order timeout failed, order_id=%d err=%v", order.ID, err)
+		}
+	}
+
+	return nil
 }
 
 func UpdateOrder(id uint, req net.UpdateOrderReq) error {
+	var order models.Order
+	if err := utils.DB.First(&order, id).Error; err != nil {
+		return err
+	}
+
 	updates := make(map[string]interface{})
 	if req.Status != nil {
 		updates["status"] = *req.Status
 	}
-	return utils.DB.Model(&models.Order{}).Where("id = ?", id).Updates(updates).Error
+	if err := utils.DB.Model(&models.Order{}).Where("id = ?", id).Updates(updates).Error; err != nil {
+		return err
+	}
+
+	if err := invalidateOrderCaches(order.UserID); err != nil {
+		log.Printf("invalidate order cache failed, user_id=%d err=%v", order.UserID, err)
+	}
+	if req.Status != nil && *req.Status != "pending" && utils.RedisClient != nil {
+		if err := utils.RemoveOrderTimeout(id); err != nil {
+			log.Printf("remove order timeout failed, order_id=%d err=%v", id, err)
+		}
+	}
+	return nil
 }

@@ -6,7 +6,7 @@ type Order struct {
 	gorm.Model
 	UserID        uint    `json:"user_id"`
 	TotalAmount   float32 `gorm:"not null" json:"total_amount"`
-	Status        string  `gorm:"default:'pending';check:status in ('pending','paid','shipped','completed')"`
+	Status        string  `gorm:"default:'pending';check:status in ('pending','paid','shipped','completed','cancelled')"`
 	ReceiverAddr  string  `gorm:"not null" json:"receiver_addr"`
 	ReceiverName  string  `gorm:"not null" json:"receiver_name"`
 	ReceiverPhone string  `gorm:"not null" json:"receiver_phone"`

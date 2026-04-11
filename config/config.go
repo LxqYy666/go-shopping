@@ -16,3 +16,15 @@ const (
 const (
 	JWTSecret = "my_secret"
 )
+
+const (
+	RedisAddr     = "127.0.0.1:6379"
+	RedisPassword = ""
+	RedisDB       = 0
+)
+
+const (
+	CacheTTLSeconds        = 300
+	OrderAutoCancelMinutes = 30
+	OrderCancelScanSeconds = 10
+)
